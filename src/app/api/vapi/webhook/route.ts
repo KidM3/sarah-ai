@@ -165,9 +165,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       break;
 
     default: {
-      // Exhaustiveness check — TypeScript will warn if a case is missing
-      const _unhandled = message satisfies never;
-      console.warn("[vapi/webhook] unhandled event type:", (_unhandled as { type: string }).type);
+      console.warn("[vapi/webhook] unhandled event type:", (message as { type: string }).type);
     }
   }
 
