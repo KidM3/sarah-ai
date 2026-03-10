@@ -4,23 +4,21 @@ import type {
   VapiWebhookPayload,
   VapiCallStartedMessage,
   VapiCallEndedMessage,
+  VapiEndOfCallReportMessage,
   VapiTranscriptEvent,
 } from "@/types/vapi";
+import { sendSms } from "@/lib/twilio";
+import { extractCallInfo, formatSmsBody } from "@/lib/extractCallInfo";
+import { saveCall } from "@/lib/supabase";
 
 // ─── Signature verification ───────────────────────────────────────────────────
 
-/**
- * Verifies the HMAC-SHA256 signature that Vapi attaches to every webhook
- * request. Returns false if the secret is not configured (dev convenience)
- * or the signature does not match.
- */
 async function verifyVapiSignature(
   rawBody: string,
   request: NextRequest
 ): Promise<boolean> {
   const secret = process.env.VAPI_WEBHOOK_SECRET;
 
-  // Skip verification in development if no secret is configured
   if (!secret) {
     console.warn(
       "[vapi/webhook] VAPI_WEBHOOK_SECRET is not set — skipping signature verification"
@@ -60,23 +58,58 @@ function handleCallStarted(message: VapiCallStartedMessage): void {
   });
 }
 
-function handleCallEnded(message: VapiCallEndedMessage): void {
+async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallReportMessage): Promise<void> {
   const { call } = message;
+
+  const durationSeconds =
+    call.startedAt && call.endedAt
+      ? (
+          (new Date(call.endedAt).getTime() -
+            new Date(call.startedAt).getTime()) /
+          1000
+        ).toFixed(1)
+      : undefined;
+
   console.log("[vapi/webhook] call-ended", {
     callId: call.id,
     type: call.type,
     endedReason: call.endedReason,
-    durationSeconds:
-      call.startedAt && call.endedAt
-        ? (
-            (new Date(call.endedAt).getTime() -
-              new Date(call.startedAt).getTime()) /
-            1000
-          ).toFixed(1)
-        : undefined,
+    durationSeconds,
     cost: call.cost,
     transcriptLength: call.transcript?.length ?? 0,
   });
+
+  const ownerPhone = process.env.SHOP_OWNER_PHONE;
+  if (!ownerPhone) {
+    console.warn("[vapi/webhook] SHOP_OWNER_PHONE not set — skipping SMS");
+    return;
+  }
+
+  const info = extractCallInfo(call.transcript ?? "", call.messages);
+
+  // Save call to Supabase
+  try {
+    await saveCall({
+      call_id: call.id,
+      caller_name: info.name,
+      caller_phone: info.callbackNumber,
+      issue: info.issue,
+      duration_seconds: durationSeconds ? parseFloat(durationSeconds) : null,
+      transcript: call.transcript ?? null,
+    });
+    console.log("[vapi/webhook] Call saved to Supabase:", call.id);
+  } catch (err) {
+    console.error("[vapi/webhook] Failed to save call to Supabase:", err);
+  }
+
+  const smsBody = formatSmsBody(info, call.id, durationSeconds, call.transcript);
+
+  try {
+    await sendSms(ownerPhone, smsBody);
+  } catch (err) {
+    // Log but don't fail the webhook — Vapi must receive a 200
+    console.error("[vapi/webhook] Failed to send SMS:", err);
+  }
 }
 
 function handleTranscript(message: VapiTranscriptEvent): void {
@@ -99,7 +132,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Failed to read request body" }, { status: 400 });
   }
 
-  // Verify the request genuinely came from Vapi
   const isValid = await verifyVapiSignature(rawBody, request);
   if (!isValid) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
@@ -126,7 +158,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       break;
 
     case "call-ended":
-      handleCallEnded(message);
+    case "end-of-call-report":
+      await handleCallEnded(message);
       break;
 
     case "transcript":
@@ -165,17 +198,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       break;
 
     default: {
-      // Exhaustiveness check — TypeScript will warn if a case is missing
-      const _unhandled = message satisfies never;
-      console.warn("[vapi/webhook] unhandled event type:", (_unhandled as { type: string }).type);
+      console.warn("[vapi/webhook] unhandled event type:", (message as { type: string }).type);
     }
   }
 
-  // Vapi expects a 200 OK to acknowledge receipt
   return NextResponse.json({ received: true }, { status: 200 });
 }
 
-// Reject non-POST methods explicitly
 export async function GET(): Promise<NextResponse> {
   return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
