@@ -86,8 +86,10 @@ async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallRepo
   }
 
   const info = extractCallInfo(call.transcript ?? "", call.messages);
+  console.log("[vapi/webhook] extractCallInfo result:", info);
 
   // Save call to Supabase
+  console.log("[vapi/webhook] Attempting to save call to Supabase:", call.id);
   try {
     await saveCall({
       call_id: call.id,
