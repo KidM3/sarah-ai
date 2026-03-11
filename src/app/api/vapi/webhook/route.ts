@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import type {
+mport type {
   VapiWebhookPayload,
   VapiCallStartedMessage,
   VapiCallEndedMessage,
-  VapiEndOfCallReportMessage,
   VapiTranscriptEvent,
 } from "@/types/vapi";
 import { sendSms } from "@/lib/twilio";
@@ -58,7 +57,7 @@ function handleCallStarted(message: VapiCallStartedMessage): void {
   });
 }
 
-async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallReportMessage): Promise<void> {
+async function handleCallEnded(message: VapiCallEndedMessage)
   const { call } = message;
 
   const durationSeconds =
