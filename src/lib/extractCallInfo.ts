@@ -20,3 +20,16 @@ export function extractCallInfo(
     issue: issueMatch?.[0] ?? null,
   };
 }
+export function formatSmsBody(
+  info: CallInfo,
+  callId: string,
+  durationSeconds: string | undefined,
+  transcript: string
+): string {
+  const name = info.name ?? "Unknown";
+  const phone = info.callbackNumber ?? "Unknown";
+  const issue = info.issue ?? "Not captured";
+  const duration = durationSeconds ? `${durationSeconds}s` : "Unknown";
+
+  return `📞 New Call — Sarah AI\nCaller: ${name}\nPhone: ${phone}\nIssue: ${issue}\nDuration: ${duration}\nCall ID: ${callId}`;
+}
