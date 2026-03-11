@@ -1,9 +1,6 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Ensure the webhook body is not parsed by Next.js default body parser
-  // (handled manually in the route for signature verification)
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   experimental: {},
 };
 
-export default nextConfig;
+module.exports = nextConfig;
