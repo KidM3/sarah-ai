@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-mport type {
+import type {
   VapiWebhookPayload,
   VapiCallStartedMessage,
   VapiCallEndedMessage,
