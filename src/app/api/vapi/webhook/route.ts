@@ -47,7 +47,7 @@ async function verifyVapiSignature(
 
 // ─── Event handlers ───────────────────────────────────────────────────────────
 
-function handleCallStarted(message: VapiCallStartedMessage): void {
+async function handleCallEnded(message: VapiCallEndedMessage): Promise<void> {
   const { call } = message;
   console.log("[vapi/webhook] call-started", {
     callId: call.id,
