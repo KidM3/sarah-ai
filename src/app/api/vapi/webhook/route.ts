@@ -85,7 +85,31 @@ async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallRepo
     return;
   }
 
-  const info = extractCallInfo(call.transcript ?? "", call.messages);
+  let transcript = call.transcript ?? "";
+  let messages = call.messages;
+
+  if (!transcript) {
+    console.log("[vapi/webhook] Transcript missing in webhook payload — fetching from Vapi API:", call.id);
+    try {
+      const vapiKey = process.env.VAPI_API_KEY;
+      if (!vapiKey) throw new Error("VAPI_API_KEY is not set");
+
+      const res = await fetch(`https://api.vapi.ai/call/${call.id}`, {
+        headers: { Authorization: `Bearer ${vapiKey}` },
+      });
+
+      if (!res.ok) throw new Error(`Vapi API returned ${res.status}`);
+
+      const fullCall = await res.json() as { transcript?: string; messages?: typeof messages };
+      transcript = fullCall.transcript ?? "";
+      messages = fullCall.messages ?? messages;
+      console.log("[vapi/webhook] Fetched transcript from Vapi API, length:", transcript.length);
+    } catch (err) {
+      console.error("[vapi/webhook] Failed to fetch call from Vapi API:", err);
+    }
+  }
+
+  const info = extractCallInfo(transcript, messages);
   console.log("[vapi/webhook] extractCallInfo result:", info);
 
   // Save call to Supabase
@@ -97,14 +121,14 @@ async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallRepo
       caller_phone: info.callbackNumber,
       issue: info.issue,
       duration_seconds: durationSeconds ? parseFloat(durationSeconds) : null,
-      transcript: call.transcript ?? null,
+      transcript: transcript || null,
     });
     console.log("[vapi/webhook] Call saved to Supabase:", call.id);
   } catch (err) {
     console.error("[vapi/webhook] Failed to save call to Supabase:", err);
   }
 
-  const smsBody = formatSmsBody(info, call.id, durationSeconds, call.transcript);
+  const smsBody = formatSmsBody(info, call.id, durationSeconds, transcript);
 
   try {
     await sendSms(ownerPhone, smsBody);
@@ -113,6 +137,7 @@ async function handleCallEnded(message: VapiCallEndedMessage | VapiEndOfCallRepo
     console.error("[vapi/webhook] Failed to send SMS:", err);
   }
 }
+
 
 function handleTranscript(message: VapiTranscriptEvent): void {
   console.log("[vapi/webhook] transcript", {
