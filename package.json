@@ -15,6 +15,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@supabase/supabase-js": "^2.49.1"
+    "twilio": "^5.3.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
