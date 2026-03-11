@@ -6,9 +6,9 @@ export interface CallInfo {
 
 export function extractCallInfo(
   transcript: string,
-  messages?: { role: string; content: string }[]
+  messages?: { role: string; message?: string; content?: string }[]
 ): CallInfo {
-  const text = transcript || messages?.map((m) => m.content).join(" ") || "";
+  const text = transcript || messages?.map((m) => m.content ?? m.message ?? "").join(" ") || "";
 
   const nameMatch = text.match(/(?:my name is|this is|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
   const phoneMatch = text.match(/(\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4})/);
