@@ -4,7 +4,6 @@ import { useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export interface Call {"use client";
 
 export interface Call {
   id: string;
