@@ -1,5 +1,5 @@
 import { getCalls } from "@/lib/supabase";
-import DashboardClient, { type Call } from "./DashboardClient";
+import DashboardClient, { type Call } from "./dashboard/DashboardClient";
 
 export const dynamic = "force-dynamic";
 
