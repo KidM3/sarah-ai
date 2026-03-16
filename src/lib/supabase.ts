@@ -5,6 +5,7 @@ export interface CallRecord {
   caller_name: string | null;
   caller_phone: string | null;
   issue: string | null;
+  vehicle: string | null;
   duration_seconds: number | null;
   transcript: string | null;
 }
