@@ -4,40 +4,45 @@ export interface CallInfo {
   issue: string | null;
 }
 
+function spokenNumbersToDigits(text: string): string {
+  const words: Record<string, string> = {
+    zero: "0", one: "1", two: "2", three: "3", four: "4",
+    five: "5", six: "6", seven: "7", eight: "8", nine: "9",
+  };
+  return text.replace(
+    /\b(zero|one|two|three|four|five|six|seven|eight|nine)(\s+(zero|one|two|three|four|five|six|seven|eight|nine)){6,}\b/gi,
+    (match) => match.toLowerCase().split(/\s+/).map((w) => words[w] ?? w).join("")
+  );
+}
+
 export function extractCallInfo(
   transcript: string,
   messages?: { role: string; message?: string; content?: string }[]
 ): CallInfo {
-  // Only look at user/caller turns, not assistant turns
   const userText = messages
-    ? messages
-        .filter((m) => m.role === "user")
-        .map((m) => m.content ?? m.message ?? "")
-        .join(" ")
-    : transcript;
+    ? messages.filter((m) => m.role === "user").map((m) => m.content ?? m.message ?? "").join(" ")
+    : transcript.split("\n").filter((l) => l.startsWith("User:")).map((l) => l.replace("User:", "")).join(" ");
 
   const fullText = transcript || userText || "";
+  const convertedText = spokenNumbersToDigits(fullText);
+  const convertedUserText = spokenNumbersToDigits(userText);
 
-  // Name: only match when caller says it, exclude "Sarah" (the AI name)
-  const nameMatch = userText.match(
-    /(?:my name is|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i
-  );
-  const name = nameMatch?.[1] && nameMatch[1].toLowerCase() !== "sarah"
-    ? nameMatch[1]
-    : null;
+  // Name from caller only, exclude "Sarah"
+  const nameMatch = convertedUserText.match(/(?:my name is|i'm|i am)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i);
+  const name = nameMatch?.[1] && nameMatch[1].toLowerCase() !== "sarah" ? nameMatch[1] : null;
 
-  // Phone: match any 10-digit number pattern
-  const phoneMatch = userText.match(/(\(?\d{3}\)?[\s\-]?\d{3}[\s\-]?\d{4})/);
+  // Phone from converted text
+  const phoneMatch = convertedText.match(/(\d{10}|\(?\d{3}\)?[\s\-]\d{3}[\s\-]\d{4})/);
 
-  // Issue: broader match from full transcript
-  const issueMatch = fullText.match(
-    /(?:my car|the car|vehicle|it's|problem is|issue is|need|having|brakes|engine|oil|transmission|tire|battery|check engine|leak|noise|won't start)[^.?!]{5,100}/i
-  );
+  // Issue — grab car details + problem
+  const carMatch = fullText.match(/(?:have a|driving a|got a)\s+([^.?!\n]{5,60})/i);
+  const problemMatch = fullText.match(/(?:check engine|won't start|not starting|overheating|brakes|transmission|oil|battery|flat tire|leak|noise|warning light|flashing)[^.?!\n]{0,80}/i);
+  const issue = problemMatch?.[0] ?? carMatch?.[0] ?? null;
 
   return {
     name: name ?? null,
     callbackNumber: phoneMatch?.[1] ?? null,
-    issue: issueMatch?.[0] ?? null,
+    issue: issue ?? null,
   };
 }
 
