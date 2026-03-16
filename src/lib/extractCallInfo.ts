@@ -44,7 +44,7 @@ export function extractCallInfo(
   const vehicle = vehicleMatch ? vehicleMatch[0].trim() : null;
 
   // Issue
-  const problemMatch = fullText.match(/(?:check engine|won't start|not starting|overheating|brakes|transmission|oil|battery|flat tire|leak|noise|warning light|flashing|won't turn on|doesn't start)[^.?!\n]{0,80}/i);
+  const problemMatch = fullText.match(/(?:check engine|won't start|not starting|overheating|brakes|transmission|oil|battery|flat tire|leak|noise|warning light|flashing|won't turn on|doesn't start)[^.?!\n]{0,200}/i);
   const issue = problemMatch?.[0] ?? null;
 
   return {
