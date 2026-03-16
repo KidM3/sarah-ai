@@ -10,7 +10,7 @@ export interface CallRecord {
 }
 
 export interface CallRow extends CallRecord {
-  id: number;
+  id: string;
   created_at: string;
   status: "new" | "in-progress" | "resolved";
 }
