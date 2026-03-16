@@ -128,6 +128,7 @@ async function handleCallEnded(message: VapiCallEndedMessage): Promise<void> {
       caller_name: info.name,
       caller_phone: info.callbackNumber,
       issue: info.issue,
+      vehicle: info.vehicle,
       duration_seconds: durationSeconds ? parseFloat(durationSeconds) : null,
       transcript: transcript || null,
     });
