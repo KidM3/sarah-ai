@@ -15,6 +15,7 @@ export default async function Dashboard() {
       callerName: row.caller_name ?? "Unknown Caller",
       phone: row.caller_phone ?? "—",
       issue: row.issue ?? "No issue recorded",
+      vehicle: row.vehicle ?? null,
       duration: Math.round(row.duration_seconds ?? 0),
       timestamp: new Date(row.created_at),
       status: row.status ?? "new",
