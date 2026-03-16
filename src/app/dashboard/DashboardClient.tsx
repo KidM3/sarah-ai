@@ -11,6 +11,7 @@ export interface Call {
   duration: number;
   timestamp: Date;
   status: string;
+  vehicle: string | null;
 }
 
 function formatDuration(seconds: number): string {
@@ -140,7 +141,7 @@ export default function DashboardClient({ calls }: { calls: Call[] }) {
                       </div>
                       <div>
                         <div style={{ fontWeight: 600, fontSize: 15, color: "#1a1a2e" }}>{call.callerName}</div>
-                        <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{call.phone || "No phone"}</div>
+                        <div style={{ fontSize: 12, color: "#888", marginTop: 1 }}>{call.phone || "No phone"}{call.vehicle ? ` · ${call.vehicle}` : ""}</div>
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
