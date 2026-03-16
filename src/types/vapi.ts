@@ -60,6 +60,12 @@ export interface VapiCallEndedMessage {
   timestamp?: string;
 }
 
+export interface VapiEndOfCallReportMessage {
+  type: "end-of-call-report";
+  call: VapiCall;
+  timestamp?: string;
+}
+
 export interface VapiTranscriptEvent {
   type: "transcript";
   call: VapiCall;
@@ -111,6 +117,7 @@ export interface VapiAssistantRequestMessage {
 export type VapiWebhookMessage =
   | VapiCallStartedMessage
   | VapiCallEndedMessage
+  | VapiEndOfCallReportMessage
   | VapiTranscriptEvent
   | VapiSpeechUpdateMessage
   | VapiStatusUpdateMessage
