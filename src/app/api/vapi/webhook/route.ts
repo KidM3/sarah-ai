@@ -4,7 +4,7 @@ import type {
   VapiWebhookPayload,
   VapiCallStartedMessage,
   VapiCallEndedMessage,
-  VapiEndOfCallReportMessage
+  VapiEndOfCallReportMessage,
   VapiTranscriptEvent,
 } from "@/types/vapi";
 import { sendSms } from "@/lib/twilio";
