@@ -38,11 +38,11 @@ export async function saveCall(record: CallRecord): Promise<void> {
 
 export async function getCalls(): Promise<CallRow[]> {
   const supabase = getSupabaseClient();
-
   const { data, error } = await supabase
     .from("calls")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(100);
 
   if (error) {
     throw new Error(`Failed to fetch calls from Supabase: ${error.message}`);
