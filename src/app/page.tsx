@@ -1,6 +1,8 @@
 import { getCalls } from "@/lib/supabase";
 import DashboardClient, { type Call } from "./dashboard/DashboardClient";
 
+export const fetchCache = "force-no-store";
+
 export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
