@@ -195,9 +195,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handleCallStarted(message);
       break;
 
-    case "call-ended":
-      await handleCallEnded(message);
-      break;
+   case "call-ended":
+case "end-of-call-report":
+  await handleCallEnded(message as VapiCallEndedMessage);
+  break;
 
     case "transcript":
       handleTranscript(message);
