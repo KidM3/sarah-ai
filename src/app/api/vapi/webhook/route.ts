@@ -61,7 +61,7 @@ function handleCallStarted(message: VapiCallStartedMessage): void {
 async function handleCallEnded(message: VapiCallEndedMessage): Promise<void> {
   const { call } = message;
 
-  const durationSeconds =
+  let durationSeconds: string | undefined =
     call.startedAt && call.endedAt
       ? (
           (new Date(call.endedAt).getTime() -
@@ -88,9 +88,9 @@ async function handleCallEnded(message: VapiCallEndedMessage): Promise<void> {
   let transcript = call.transcript ?? "";
   let messages = call.messages;
 
-  if (!transcript) {
+  if (!transcript || !durationSeconds) {
     console.log(
-      "[vapi/webhook] Transcript missing in webhook payload — fetching from Vapi API:",
+      "[vapi/webhook] Transcript or duration missing in webhook payload — fetching from Vapi API:",
       call.id
     );
     try {
@@ -106,13 +106,39 @@ async function handleCallEnded(message: VapiCallEndedMessage): Promise<void> {
       const fullCall = (await res.json()) as {
         transcript?: string;
         messages?: typeof messages;
+        startedAt?: string;
+        endedAt?: string;
+        duration?: number;
       };
-      transcript = fullCall.transcript ?? "";
-      messages = fullCall.messages ?? messages;
-      console.log(
-        "[vapi/webhook] Fetched transcript from Vapi API, length:",
-        transcript.length
-      );
+
+      if (!transcript) {
+        transcript = fullCall.transcript ?? "";
+        messages = fullCall.messages ?? messages;
+        console.log(
+          "[vapi/webhook] Fetched transcript from Vapi API, length:",
+          transcript.length
+        );
+      }
+
+      if (!durationSeconds) {
+        if (fullCall.duration) {
+          durationSeconds = fullCall.duration.toFixed(1);
+          console.log(
+            "[vapi/webhook] Got duration from Vapi API (duration field):",
+            durationSeconds
+          );
+        } else if (fullCall.startedAt && fullCall.endedAt) {
+          durationSeconds = (
+            (new Date(fullCall.endedAt).getTime() -
+              new Date(fullCall.startedAt).getTime()) /
+            1000
+          ).toFixed(1);
+          console.log(
+            "[vapi/webhook] Calculated duration from Vapi API timestamps:",
+            durationSeconds
+          );
+        }
+      }
     } catch (err) {
       console.error("[vapi/webhook] Failed to fetch call from Vapi API:", err);
     }
@@ -197,10 +223,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       handleCallStarted(message);
       break;
 
-   case "call-ended":
-case "end-of-call-report":
-  await handleCallEnded(message as VapiCallEndedMessage);
-  break;
+    case "call-ended":
+    case "end-of-call-report":
+      await handleCallEnded(message as VapiCallEndedMessage);
+      break;
 
     case "transcript":
       handleTranscript(message);
