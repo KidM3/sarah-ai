@@ -156,7 +156,7 @@ export default function DashboardClient({ calls }: { calls: Call[] }) {
     }
     setReviewSending(call.id);
     const name = call.callerName !== "Unknown Caller" ? call.callerName : "there";
-    const message = `Hi ${name}, thanks for choosing our auto shop! We'd love your feedback — it helps us serve you better. Please leave us a quick review: https://g.page/r/YOUR_GOOGLE_REVIEW_LINK\n\nReply STOP to opt out.`;
+    const message = `Hi ${name}, thanks for choosing our auto shop! We'd love your feedback — it helps us serve you better. Please leave us a quick review: https://search.google.com/local/writereview?placeid=ChIJxQGvfYLSt4kRBNK9q-oXweE\n\nReply STOP to opt out.`;
     try {
       const res = await fetch("/api/send-sms", {
         method: "POST",
